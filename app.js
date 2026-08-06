@@ -22,8 +22,7 @@ function parseYmd(s) {
 }
 
 function istToday() {
-  var now = new Date();
-  return ymd(new Date(now.getTime() + now.getTimezoneOffset() * 60000 + 19800000));
+  return ymd(new Date(Date.now() + 19800000));
 }
 
 function addDays(s, n) {
@@ -276,11 +275,22 @@ $("submit").addEventListener("click", function () {
       $("minutes").value = "";
       $("newname").value = "";
       $("live").textContent = "Enter minutes only.";
-      msg.textContent = "Logged " + hm(mins) + " for " + name + ".";
       localStorage.setItem("daimokuMember", name);
       return load().then(function () {
         $("who").value = name;
         onWhoChange();
+        var t = istToday();
+        var got = 0;
+        for (var i = 0; i < logs.length; i++) {
+          if (logs[i].name === name && logs[i].day === t) got += logs[i].minutes;
+        }
+        if (got > 0) {
+          msg.className = "msg";
+          msg.textContent = "Saved. " + hm(got) + " logged today.";
+        } else {
+          msg.className = "msg bad";
+          msg.textContent = "Saved to the sheet but not showing yet. Refresh in a moment.";
+        }
       });
     })
     .catch(function (err) {
