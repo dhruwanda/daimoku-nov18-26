@@ -1,1 +1,1 @@
-# daimoku-nov18-26
+# daimoku tracker towards Nov 18, 2026
