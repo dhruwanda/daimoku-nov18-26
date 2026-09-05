@@ -21,12 +21,16 @@
       <span class="stat-value" id="mine">0h</span>
     </div>
     <div class="stat">
-      <span class="stat-label">District</span>
+      <span class="stat-label">Days left</span>
+      <span class="stat-value" id="daysleft">—</span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">District daimoku</span>
       <span class="stat-value" id="district">0h</span>
     </div>
     <div class="stat">
-      <span class="stat-label">Days left</span>
-      <span class="stat-value" id="daysleft">—</span>
+      <span class="stat-label">District home visits</span>
+      <span class="stat-value" id="districtvisits">0</span>
     </div>
   </div>
   <p class="note">Totals count from 7 August onwards</p>
@@ -51,8 +55,42 @@
     <p class="today" id="today"></p>
   </section>
 
+  <section class="panel">
+    <label for="vwho">Member</label>
+    <select id="vwho">
+      <option value="">Loading…</option>
+    </select>
+
+    <div id="vnewbox" hidden>
+      <label for="vnewname">Full name</label>
+      <input id="vnewname" type="text" placeholder="Your name" autocomplete="off" />
+    </div>
+
+    <label for="vvisited">Who did you home visit?</label>
+    <select id="vvisited">
+      <option value="">Loading…</option>
+    </select>
+
+    <div id="vnewbox2" hidden>
+      <label for="vnewname2">Full name</label>
+      <input id="vnewname2" type="text" placeholder="Name of the person you visited" autocomplete="off" />
+    </div>
+
+    <button id="vsubmit" type="button">Log a home visit</button>
+    <p class="msg" id="vmsg"></p>
+  </section>
+
   <h2>By member</h2>
   <div id="members" class="members"><p class="empty">Loading…</p></div>
+
+  <section class="visits-wrap">
+    <h2>Home visits</h2>
+    <div class="legend">
+      <span class="legend-item"><span class="dot dot-visited"></span>I visited them</span>
+      <span class="legend-item"><span class="dot dot-visitedby"></span>They visited me</span>
+    </div>
+    <div id="visits" class="visits"><p class="empty">Loading…</p></div>
+  </section>
 
   <section class="daily-wrap">
     <h2>District total per day</h2>
