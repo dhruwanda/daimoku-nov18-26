@@ -5,6 +5,7 @@ var END = "2026-11-18";
 
 var members = [];
 var logs = [];
+var visits = [];
 
 var $ = function (id) { return document.getElementById(id); };
 
@@ -83,6 +84,27 @@ function totalsByDay() {
   return out;
 }
 
+function campaignVisits() {
+  var out = [];
+  for (var i = 0; i < visits.length; i++) {
+    if (inCampaign(visits[i].day)) out.push(visits[i]);
+  }
+  return out;
+}
+
+function visitsByMember() {
+  var map = {};
+  var vs = campaignVisits();
+  for (var i = 0; i < vs.length; i++) {
+    var v = vs[i];
+    if (!map[v.visitor]) map[v.visitor] = [];
+    if (!map[v.visited]) map[v.visited] = [];
+    map[v.visitor].push({ name: v.visited, cls: "visited" });
+    map[v.visited].push({ name: v.visitor, cls: "visitedby" });
+  }
+  return map;
+}
+
 function daysLeft() {
   var t = istToday();
   if (t > END) return 0;
@@ -101,19 +123,21 @@ function renderStats() {
   $("mine").textContent = hm(me && per[me] ? per[me] : 0);
   $("district").textContent = hm(district);
   $("daysleft").textContent = daysLeft();
+  $("districtvisits").textContent = campaignVisits().length * 2;
 }
 
 function renderMembers() {
   var per = totalsByMember();
-  var names = members.slice().sort(function (a, b) { return (per[b] || 0) - (per[a] || 0); });
+  var names = members.filter(function (n) { return (per[n] || 0) > 0; });
+  names.sort(function (a, b) { return (per[b] || 0) - (per[a] || 0); });
 
   if (!names.length) {
-    $("members").innerHTML = '<p class="empty">No members yet. Add yourself above.</p>';
+    $("members").innerHTML = '<p class="empty">No daimoku logged yet.</p>';
     return;
   }
 
   var max = 0;
-  for (var i = 0; i < names.length; i++) if ((per[names[i]] || 0) > max) max = per[names[i]];
+  for (var i = 0; i < names.length; i++) if (per[names[i]] > max) max = per[names[i]];
 
   var html = "";
   for (var j = 0; j < names.length; j++) {
@@ -127,6 +151,34 @@ function renderMembers() {
       + "</div>";
   }
   $("members").innerHTML = html;
+}
+
+function renderVisits() {
+  var map = visitsByMember();
+  var names = Object.keys(map);
+  names.sort(function (a, b) { return map[b].length - map[a].length || a.localeCompare(b); });
+
+  if (!names.length) {
+    $("visits").innerHTML = '<p class="empty">No home visits logged yet.</p>';
+    return;
+  }
+
+  var html = "";
+  for (var i = 0; i < names.length; i++) {
+    var n = names[i];
+    var chips = map[n];
+    var chipHtml = "";
+    for (var j = 0; j < chips.length; j++) {
+      var c = chips[j];
+      var cls = c.cls === "visited" ? "chip-visited" : "chip-visitedby";
+      chipHtml += '<span class="chip ' + cls + '">' + esc(c.name) + "</span>";
+    }
+    html += '<div class="vrow">'
+      + '<span class="name" title="' + esc(n) + '">' + esc(n) + "</span>"
+      + '<span class="chips">' + chipHtml + "</span>"
+      + "</div>";
+  }
+  $("visits").innerHTML = html;
 }
 
 function renderDaily() {
@@ -179,6 +231,7 @@ function renderToday() {
 function renderAll() {
   renderStats();
   renderMembers();
+  renderVisits();
   renderDaily();
   renderToday();
 }
@@ -189,21 +242,37 @@ function esc(s) {
   });
 }
 
-/* ---------- dropdown ---------- */
+/* ---------- dropdowns ---------- */
 
-function fillSelect(keep) {
-  var sel = $("who");
-  var html = '<option value="">Select your name</option>';
+function optionsHtml(extraLabel) {
   var sorted = members.slice().sort(function (a, b) { return a.localeCompare(b); });
+  var html = "";
   for (var i = 0; i < sorted.length; i++) {
     html += '<option value="' + esc(sorted[i]) + '">' + esc(sorted[i]) + "</option>";
   }
-  html += '<option value="__new">+ Add new member</option>';
-  sel.innerHTML = html;
+  html += '<option value="__new">' + extraLabel + "</option>";
+  return html;
+}
 
+function fillSelect(keep) {
+  var sel = $("who");
+  sel.innerHTML = '<option value="">Select your name</option>' + optionsHtml("+ Add new member");
   var want = keep || localStorage.getItem("daimokuMember") || "";
   if (want && members.indexOf(want) !== -1) sel.value = want;
   onWhoChange();
+}
+
+function fillVisitSelects(keepVisitor) {
+  var vwho = $("vwho");
+  vwho.innerHTML = '<option value="">Select your name</option>' + optionsHtml("+ Add new member");
+  var want = keepVisitor || localStorage.getItem("daimokuMember") || "";
+  if (want && members.indexOf(want) !== -1) vwho.value = want;
+
+  var vvisited = $("vvisited");
+  vvisited.innerHTML = '<option value="">Select a name</option>' + optionsHtml("+ Add new person");
+
+  onVwhoChange();
+  onVvisitedChange();
 }
 
 function onWhoChange() {
@@ -212,6 +281,14 @@ function onWhoChange() {
   if (v && v !== "__new") localStorage.setItem("daimokuMember", v);
   renderStats();
   renderToday();
+}
+
+function onVwhoChange() {
+  $("vnewbox").hidden = $("vwho").value !== "__new";
+}
+
+function onVvisitedChange() {
+  $("vnewbox2").hidden = $("vvisited").value !== "__new";
 }
 
 /* ---------- network ---------- */
@@ -223,11 +300,14 @@ function load() {
       if (!data.ok) throw new Error(data.error || "Could not load");
       members = data.members || [];
       logs = data.logs || [];
+      visits = data.visits || [];
       fillSelect();
+      fillVisitSelects();
       renderAll();
     })
     .catch(function (err) {
       $("members").innerHTML = '<p class="empty">Could not load data. Check your connection and refresh.</p>';
+      $("visits").innerHTML = "";
       console.error(err);
     });
 }
@@ -240,7 +320,7 @@ function send(payload) {
   }).then(function (r) { return r.json(); });
 }
 
-/* ---------- events ---------- */
+/* ---------- daimoku form ---------- */
 
 $("who").addEventListener("change", onWhoChange);
 
@@ -291,6 +371,62 @@ $("submit").addEventListener("click", function () {
           msg.className = "msg bad";
           msg.textContent = "Saved to the sheet but not showing yet. Refresh in a moment.";
         }
+      });
+    })
+    .catch(function (err) {
+      fail("Could not save. Try again.");
+      console.error(err);
+    })
+    .then(function () { btn.disabled = false; });
+
+  function fail(text) {
+    msg.className = "msg bad";
+    msg.textContent = text;
+  }
+});
+
+/* ---------- home visit form ---------- */
+
+$("vwho").addEventListener("change", onVwhoChange);
+$("vvisited").addEventListener("change", onVvisitedChange);
+
+$("vsubmit").addEventListener("click", function () {
+  var btn = this;
+  var vsel = $("vwho").value;
+  var wsel = $("vvisited").value;
+  var msg = $("vmsg");
+
+  msg.className = "msg";
+
+  if (!vsel) { fail("Select your name first."); return; }
+  if (vsel === "__new" && !$("vnewname").value.trim()) { fail("Enter your name first."); return; }
+  if (!wsel) { fail("Select who you visited."); return; }
+  if (wsel === "__new" && !$("vnewname2").value.trim()) { fail("Enter their name first."); return; }
+
+  var visitor = vsel === "__new" ? $("vnewname").value.trim() : vsel;
+  var visited = wsel === "__new" ? $("vnewname2").value.trim() : wsel;
+
+  if (visitor.toLowerCase() === visited.toLowerCase()) {
+    fail("You visited yourself? Pick two different people.");
+    return;
+  }
+
+  btn.disabled = true;
+  msg.textContent = "Saving…";
+
+  send({ action: "visit", visitor: visitor, visited: visited })
+    .then(function (res) {
+      if (!res.ok) throw new Error(res.error || "Could not save");
+      $("vnewname").value = "";
+      $("vnewname2").value = "";
+      localStorage.setItem("daimokuMember", visitor);
+      return load().then(function () {
+        $("who").value = visitor;
+        onWhoChange();
+        $("vwho").value = visitor;
+        onVwhoChange();
+        msg.className = "msg";
+        msg.textContent = "Logged: " + visitor + " visited " + visited + ".";
       });
     })
     .catch(function (err) {
