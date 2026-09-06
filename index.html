@@ -3,113 +3,33 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Daimoku tracker — Sector 19</title>
+<title>Daimoku tracker</title>
 <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<main class="card">
+<main class="card landing">
 
   <h1>Daimoku tracker</h1>
-  <p class="sub">Sector 19 district</p>
+  <p class="sub">Select your chapter and district</p>
 
-  <div class="banner">Let's win through a lion's roar this November 18th!</div>
+  <label for="chapter">Chapter</label>
+  <select id="chapter">
+    <option value="">Select chapter</option>
+    <option value="HUDA">HUDA</option>
+    <option value="Kanishka">Kanishka</option>
+  </select>
 
-  <div class="stats">
-    <div class="stat">
-      <span class="stat-label">Your total</span>
-      <span class="stat-value" id="mine">0h</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">Days left</span>
-      <span class="stat-value" id="daysleft">—</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">District daimoku</span>
-      <span class="stat-value" id="district">0h</span>
-    </div>
-    <div class="stat">
-      <span class="stat-label">District home visits</span>
-      <span class="stat-value" id="districtvisits">0</span>
-    </div>
-  </div>
-  <p class="note">Totals count from 7 August onwards</p>
+  <label for="district">District</label>
+  <select id="district" disabled>
+    <option value="">Select chapter first</option>
+  </select>
 
-  <section class="panel">
-    <label for="who">Member</label>
-    <select id="who">
-      <option value="">Loading…</option>
-    </select>
-
-    <div id="newbox" hidden>
-      <label for="newname">Full name</label>
-      <input id="newname" type="text" placeholder="Your name" autocomplete="off" />
-    </div>
-
-    <label for="minutes">Today's daimoku, in minutes</label>
-    <input id="minutes" type="number" min="1" step="1" inputmode="numeric" placeholder="e.g. 90" />
-    <p class="live" id="live">Enter minutes only.</p>
-
-    <button id="submit" type="button">Log daimoku</button>
-    <p class="msg" id="msg"></p>
-    <p class="today" id="today"></p>
-  </section>
-
-  <section class="panel">
-    <label for="vwho">Member</label>
-    <select id="vwho">
-      <option value="">Loading…</option>
-    </select>
-
-    <div id="vnewbox" hidden>
-      <label for="vnewname">Full name</label>
-      <input id="vnewname" type="text" placeholder="Your name" autocomplete="off" />
-    </div>
-
-    <label for="vvisited">Who did you home visit?</label>
-    <select id="vvisited">
-      <option value="">Loading…</option>
-    </select>
-
-    <div id="vnewbox2" hidden>
-      <label for="vnewname2">Full name</label>
-      <input id="vnewname2" type="text" placeholder="Name of the person you visited" autocomplete="off" />
-    </div>
-
-    <button id="vsubmit" type="button">Log a home visit</button>
-    <p class="msg" id="vmsg"></p>
-  </section>
-
-  <h2>By member</h2>
-  <div id="members" class="members"><p class="empty">Loading…</p></div>
-
-  <section class="visits-wrap">
-    <h2>Home visits</h2>
-    <div class="legend">
-      <span class="legend-item"><span class="dot dot-visited"></span>I visited them</span>
-      <span class="legend-item"><span class="dot dot-visitedby"></span>They visited me</span>
-    </div>
-    <div id="visits" class="visits"><p class="empty">Loading…</p></div>
-  </section>
-
-  <section class="daily-wrap">
-    <h2>District daimoku total per day</h2>
-    <p class="note">Counting from 7 August</p>
-    <div class="chart">
-      <div class="yaxis">
-        <span id="ymax">0h</span>
-        <span id="ymid">0h</span>
-        <span>0h</span>
-      </div>
-      <div class="plot">
-        <div class="bars" id="daily"></div>
-        <div class="dates" id="dates"></div>
-      </div>
-    </div>
-  </section>
+  <button id="proceed" type="button" disabled>Proceed</button>
+  <p class="msg bad" id="lmsg"></p>
 
 </main>
 
-<script src="app.js"></script>
+<script src="land.js"></script>
 </body>
 </html>

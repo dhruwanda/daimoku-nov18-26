@@ -67,6 +67,9 @@ h1 { margin: 0; font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
 h2 { margin: 0 0 10px; font-size: 14px; font-weight: 600; }
 
 .sub { margin: 3px 0 14px; font-size: 13px; color: var(--ink-2); }
+.switch { margin: 0 0 14px; font-size: 12px; }
+.switch a { color: var(--accent); text-decoration: none; }
+.switch a:hover { text-decoration: underline; }
 .note { margin: -4px 0 14px; font-size: 11px; color: var(--ink-3); }
 
 .banner {
