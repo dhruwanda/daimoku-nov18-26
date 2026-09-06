@@ -1,7 +1,12 @@
 var API = "https://script.google.com/macros/s/AKfycbyvy4rr5S4WbUSzsEEkCHTgm7WxB7iks2QOg5fqBseTmJgpwkk6ENIXUBJ4VrCHWR-zmA/exec";
 
-var START = "2026-08-07";
 var END = "2026-11-18";
+var START = null; // set from the sheet once loaded: the earliest member's join date
+
+var params = new URLSearchParams(location.search);
+var CHAPTER = params.get("chapter") || "";
+var DISTRICT = params.get("district") || "";
+var READY = !!(CHAPTER && DISTRICT);
 
 var members = [];
 var logs = [];
@@ -60,6 +65,7 @@ function hm(minutes) {
 /* ---------- derived numbers ---------- */
 
 function inCampaign(day) {
+  if (!START) return false;
   return day >= START && day <= END;
 }
 
@@ -113,6 +119,15 @@ function daysLeft() {
 }
 
 /* ---------- rendering ---------- */
+
+function updateStartNotes() {
+  $("startNote").textContent = START
+    ? "Totals count from " + shortDate(START) + " onwards"
+    : "Totals count from — onwards";
+  $("dailyStartNote").textContent = START
+    ? "Counting from " + shortDate(START)
+    : "No data yet";
+}
 
 function renderStats() {
   var per = totalsByMember();
@@ -182,6 +197,14 @@ function renderVisits() {
 }
 
 function renderDaily() {
+  if (!START) {
+    $("daily").innerHTML = "";
+    $("dates").innerHTML = "";
+    $("ymax").textContent = "0h";
+    $("ymid").textContent = "0h";
+    return;
+  }
+
   var byDay = totalsByDay();
   var today = istToday();
   var last = today > END ? END : (today < START ? START : today);
@@ -254,10 +277,14 @@ function optionsHtml(extraLabel) {
   return html;
 }
 
+function storageKey() {
+  return "daimokuMember:" + CHAPTER + ":" + DISTRICT;
+}
+
 function fillSelect(keep) {
   var sel = $("who");
   sel.innerHTML = '<option value="">Select your name</option>' + optionsHtml("+ Add new member");
-  var want = keep || localStorage.getItem("daimokuMember") || "";
+  var want = keep || localStorage.getItem(storageKey()) || "";
   if (want && members.indexOf(want) !== -1) sel.value = want;
   onWhoChange();
 }
@@ -265,7 +292,7 @@ function fillSelect(keep) {
 function fillVisitSelects(keepVisitor) {
   var vwho = $("vwho");
   vwho.innerHTML = '<option value="">Select your name</option>' + optionsHtml("+ Add new member");
-  var want = keepVisitor || localStorage.getItem("daimokuMember") || "";
+  var want = keepVisitor || localStorage.getItem(storageKey()) || "";
   if (want && members.indexOf(want) !== -1) vwho.value = want;
 
   var vvisited = $("vvisited");
@@ -278,7 +305,7 @@ function fillVisitSelects(keepVisitor) {
 function onWhoChange() {
   var v = $("who").value;
   $("newbox").hidden = v !== "__new";
-  if (v && v !== "__new") localStorage.setItem("daimokuMember", v);
+  if (v && v !== "__new") localStorage.setItem(storageKey(), v);
   renderStats();
   renderToday();
 }
@@ -294,25 +321,33 @@ function onVvisitedChange() {
 /* ---------- network ---------- */
 
 function load() {
-  return fetch(API + "?t=" + Date.now())
+  var url = API + "?chapter=" + encodeURIComponent(CHAPTER)
+    + "&district=" + encodeURIComponent(DISTRICT)
+    + "&t=" + Date.now();
+
+  return fetch(url)
     .then(function (r) { return r.json(); })
     .then(function (data) {
       if (!data.ok) throw new Error(data.error || "Could not load");
       members = data.members || [];
       logs = data.logs || [];
       visits = data.visits || [];
+      START = data.start || null;
+      updateStartNotes();
       fillSelect();
       fillVisitSelects();
       renderAll();
     })
     .catch(function (err) {
-      $("members").innerHTML = '<p class="empty">Could not load data. Check your connection and refresh.</p>';
+      $("members").innerHTML = '<p class="empty">Could not load this district. Check the link or go back and pick again.</p>';
       $("visits").innerHTML = "";
       console.error(err);
     });
 }
 
 function send(payload) {
+  payload.chapter = CHAPTER;
+  payload.district = DISTRICT;
   return fetch(API, {
     method: "POST",
     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -355,7 +390,7 @@ $("submit").addEventListener("click", function () {
       $("minutes").value = "";
       $("newname").value = "";
       $("live").textContent = "Enter minutes only.";
-      localStorage.setItem("daimokuMember", name);
+      localStorage.setItem(storageKey(), name);
       return load().then(function () {
         $("who").value = name;
         onWhoChange();
@@ -419,7 +454,7 @@ $("vsubmit").addEventListener("click", function () {
       if (!res.ok) throw new Error(res.error || "Could not save");
       $("vnewname").value = "";
       $("vnewname2").value = "";
-      localStorage.setItem("daimokuMember", visitor);
+      localStorage.setItem(storageKey(), visitor);
       return load().then(function () {
         $("who").value = visitor;
         onWhoChange();
@@ -441,4 +476,12 @@ $("vsubmit").addEventListener("click", function () {
   }
 });
 
-load();
+/* ---------- start ---------- */
+
+if (!READY) {
+  location.href = "index.html";
+} else {
+  document.title = "Daimoku tracker — " + CHAPTER + " " + DISTRICT;
+  $("districtLabel").textContent = CHAPTER + " " + DISTRICT;
+  load();
+}
